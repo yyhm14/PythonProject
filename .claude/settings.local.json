@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/weichao13/**)",
+      "Read(//c/Users/weichao13/AppData/Local/**)",
+      "Bash(env)",
+      "Bash(claude config --help:*)",
+      "Bash(claude mcp:*)",
+      "Bash(claude plugin:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\weichao13\\PycharmProjects\\PythonProject\\.claude\\skills",
+      "c:\\Users\\weichao13"
+    ]
+  }
+}

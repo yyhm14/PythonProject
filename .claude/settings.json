@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\weichao13\\PycharmProjects\\PythonProject"
+    ]
+  }
+}

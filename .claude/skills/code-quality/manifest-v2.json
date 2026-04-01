@@ -1,0 +1,98 @@
+{
+  "name": "code-quality-checker",
+  "version": "2.0.0",
+  "description": "通用代码质量检查工具 - 支持多种编程语言的代码规范、异常处理、日志记录和错误处理检查",
+  "author": "weichao13",
+  "homepage": "https://github.com/weichao13/code-quality-checker",
+  "license": "MIT",
+  "keywords": ["code-quality", "linter", "error-handling", "logging", "best-practices"],
+  "commands": [
+    {
+      "name": "quality-check",
+      "description": "检查代码质量问题（代码规范、异常处理、日志记录、错误处理等）",
+      "params": [
+        {
+          "name": "file",
+          "description": "要检查的文件路径（可选，不指定则检查整个项目）",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "language",
+          "description": "编程语言（auto-detect, python, javascript, typescript, java, go, rust）",
+          "required": false,
+          "type": "string",
+          "default": "auto-detect"
+        },
+        {
+          "name": "severity",
+          "description": "最低严重级别（all, high, medium, low）",
+          "required": false,
+          "type": "string",
+          "default": "all"
+        }
+      ]
+    },
+    {
+      "name": "quality-fix",
+      "description": "自动修复检测到的代码质量问题",
+      "params": [
+        {
+          "name": "file",
+          "description": "要修复的文件路径",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "issue_type",
+          "description": "要修复的问题类型：duplicate_code, exception_handling, logging, error_handling, all",
+          "required": false,
+          "type": "string",
+          "default": "all"
+        },
+        {
+          "name": "auto_apply",
+          "description": "自动应用修复（不询问确认）",
+          "required": false,
+          "type": "boolean",
+          "default": false
+        }
+      ]
+    },
+    {
+      "name": "quality-config",
+      "description": "配置代码质量检查规则（生成或修改 .code-quality.json 配置文件）",
+      "params": [
+        {
+          "name": "action",
+          "description": "操作类型（init, show, edit）",
+          "required": false,
+          "type": "string",
+          "default": "show"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "configFile": ".code-quality.json",
+    "supportedLanguages": [
+      "python",
+      "javascript",
+      "typescript",
+      "java",
+      "go",
+      "rust",
+      "csharp",
+      "php",
+      "ruby"
+    ],
+    "defaultRules": {
+      "maxFunctionLength": 50,
+      "maxParameterCount": 5,
+      "requireErrorHandling": true,
+      "requireLogging": true,
+      "checkDuplicateCode": true,
+      "checkNullSafety": true
+    }
+  }
+}
