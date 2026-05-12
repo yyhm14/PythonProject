@@ -8,11 +8,21 @@
       "Bash(claude mcp:*)",
       "Bash(claude plugin:*)",
       "Bash(chmod:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(ls -la c:/Users/weichao13/PycharmProjects/PythonProject/*.md c:/Users/weichao13/PycharmProjects/PythonProject/*.vbs)",
+      "Bash(ls -la *.md *.vbs)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "mcp__webfetch__web_fetch",
+      "Bash(rm -f test_python_service.py test_suppression.py test_suppression_card.py query_stats.py main.py alarm_service.log setup.bat && rm -rf .vscode && echo \"done\")",
+      "Bash(pip show *)",
+      "Bash(pip install *)",
+      "Bash(pyinstaller --onefile --noconsole --name heartbeat heartbeat.py)"
     ],
     "additionalDirectories": [
       "c:\\Users\\weichao13\\PycharmProjects\\PythonProject\\.claude\\skills",
-      "c:\\Users\\weichao13"
+      "c:\\Users\\weichao13",
+      "c:\\Users\\weichao13\\PycharmProjects\\PythonProject\\.vscode"
     ]
   }
 }
