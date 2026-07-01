@@ -1,0 +1,35 @@
+{
+  "name": "feishu-alarm-bot",
+  "version": "1.0.0",
+  "description": "飞书报警机器人开发助手 — 审查代码、生成脚手架、设计卡片。适用于 SCADA/PLC 报警推送、工厂设备监控等飞书消息卡片类项目。",
+  "author": "weichao13",
+  "homepage": "https://github.com/weichao13/feishu-alarm-bot",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weichao13/feishu-alarm-bot.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "feishu",
+    "lark",
+    "alarm",
+    "bot",
+    "scada",
+    "iot",
+    "bitable",
+    "card",
+    "flask",
+    "python"
+  ],
+  "skills": [
+    {
+      "name": "feishu-alarm-bot",
+      "path": "skills/feishu-alarm-bot",
+      "version": "1.0.0"
+    }
+  ],
+  "dependencies": {},
+  "compatibleWith": {
+    "claudeCode": ">=0.2.0"
+  }
+}

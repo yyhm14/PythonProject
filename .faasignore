@@ -1,0 +1,11 @@
+mov.py
+mov.zip.lixiang
+deployment.zip
+backup_main.py
+*.log
+*.bat
+.claude/
+.claude-plugin/
+.idea/
+__pycache__/
+*.pyc

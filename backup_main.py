@@ -1,7 +1,6 @@
 import json
 import os
 import threading
-# v1.1
 import logging
 import uuid
 import time
@@ -10,10 +9,9 @@ from logging.handlers import TimedRotatingFileHandler
 
 # 脚本所在目录（解决系统定时任务工作目录不一致的问题）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATS_FILE       = os.path.join(BASE_DIR, "statistics.json")
-SUPPRESS_FILE    = os.path.join(BASE_DIR, "suppression.json")
-LOG_FILE         = os.path.join(BASE_DIR, "alarm_service.log")
-GLOBAL_MUTE_FILE = os.path.join(BASE_DIR, "global_mute.json")
+STATS_FILE    = os.path.join(BASE_DIR, "statistics.json")
+SUPPRESS_FILE = os.path.join(BASE_DIR, "suppression.json")
+LOG_FILE      = os.path.join(BASE_DIR, "alarm_service.log")
 
 
 def _setup_logger():
@@ -82,60 +80,6 @@ _suppression_meta_cache = {}
 # ================= 初始化 =================
 app = Flask(__name__)
 api_client = lark.Client.builder().app_id(APP_ID).app_secret(APP_SECRET).log_level(LogLevel.INFO).build()
-
-
-# ================= 全局屏蔽开关 =================
-class GlobalMuteState:
-    """全局推送屏蔽开关（维修断电场景）"""
-
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.enabled = False
-        self.operator_id = None
-        self.enabled_at = None
-        self._load()
-
-    def enable(self, operator_id):
-        with self.lock:
-            self.enabled = True
-            self.operator_id = operator_id
-            self.enabled_at = time.time()
-            self._save()
-
-    def disable(self):
-        with self.lock:
-            self.enabled = False
-            self.operator_id = None
-            self.enabled_at = None
-            self._save()
-
-    def _save(self):
-        try:
-            with open(GLOBAL_MUTE_FILE, "w", encoding="utf-8") as f:
-                json.dump({
-                    "enabled": self.enabled,
-                    "operator_id": self.operator_id,
-                    "enabled_at": self.enabled_at
-                }, f)
-            logger.info(f"全局屏蔽状态已保存: enabled={self.enabled}, 路径={GLOBAL_MUTE_FILE}")
-        except Exception as e:
-            logger.error(f"全局屏蔽状态保存失败: {e}, 路径={GLOBAL_MUTE_FILE}")
-
-    def _load(self):
-        try:
-            if os.path.exists(GLOBAL_MUTE_FILE):
-                with open(GLOBAL_MUTE_FILE, "r", encoding="utf-8") as f:
-                    d = json.load(f)
-                self.enabled = d.get("enabled", False)
-                self.operator_id = d.get("operator_id")
-                self.enabled_at = d.get("enabled_at")
-                if self.enabled:
-                    logger.info(f"全局屏蔽状态已恢复（屏蔽中）")
-        except Exception:
-            pass
-
-
-global_mute = GlobalMuteState()
 
 
 # ================= 防重复管理器 =================
@@ -718,11 +662,6 @@ def push_feishu_card(device, linear_body, problem, alarm_time):
 def receive_data():
     try:
         data = request.get_json()
-
-        # 全局屏蔽检查（维修模式）
-        if global_mute.enabled:
-            return jsonify({"code": 200, "msg": "全局屏蔽中，已丢弃", "pushed": False})
-
         # 兼容 VBS 发送的结构 {"value": {...}}
         if "value" in data:
             val = data["value"]
@@ -841,85 +780,6 @@ def health_check():
         "status": "running",
         "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     })
-
-
-# ================= @机器人 消息指令处理 =================
-def _send_mute_status_card(chat_id, muted, operator_id=None, enabled_at=None):
-    """发送全局屏蔽状态确认卡片"""
-    if muted:
-        time_str = datetime.fromtimestamp(enabled_at, tz=timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S') if enabled_at else "未知"
-        header = {"title": {"tag": "plain_text", "content": "🔕 推送已全局屏蔽"}, "template": "red"}
-        body_text = f"**状态**: 屏蔽中\n**操作人**: <at id=\"{operator_id}\"></at>\n**生效时间**: {time_str}\n\n发送 `@机器人 开启` 可恢复推送。"
-    else:
-        header = {"title": {"tag": "plain_text", "content": "🔔 推送已恢复"}, "template": "green"}
-        body_text = "**状态**: 推送正常\n\n发送 `@机器人 屏蔽` 可关闭全部推送。"
-
-    card = {
-        "schema": "2.0",
-        "header": header,
-        "body": {"elements": [{"tag": "div", "text": {"tag": "lark_md", "content": body_text}}]}
-    }
-    try:
-        request_obj = CreateMessageRequest.builder() \
-            .receive_id_type("chat_id") \
-            .request_body(
-                CreateMessageRequestBody.builder()
-                    .receive_id(chat_id)
-                    .msg_type("interactive")
-                    .content(json.dumps(card))
-                    .build()
-            ).build()
-        api_client.im.v1.message.create(request_obj)
-    except Exception as e:
-        logger.error(f"发送屏蔽状态卡片失败: {e}")
-
-
-def do_message_receive(data: P2ImMessageReceiveV1) -> None:
-    """处理 @机器人 的消息指令：屏蔽 / 开启"""
-    try:
-        message = data.event.message
-        sender = data.event.sender
-        chat_id = message.chat_id
-        operator_id = sender.sender_id.open_id if sender and sender.sender_id else None
-
-        if message.message_type != "text":
-            return
-
-        raw = json.loads(message.content or "{}")
-        text = raw.get("text", "")
-        # 去掉 @mention 标签（格式如 @_user_1 ）
-        import re
-        text = re.sub(r"@\S+", "", text).strip()
-
-        logger.info(f"收到@指令: operator={operator_id}, text={text!r}")
-
-        if any(k in text for k in ["屏蔽", "关闭", "停止"]):
-            if not global_mute.enabled:
-                global_mute.enable(operator_id)
-                logger.info(f"全局屏蔽已开启，操作人: {operator_id}")
-            threading.Thread(target=_send_mute_status_card, kwargs={
-                "chat_id": chat_id, "muted": True,
-                "operator_id": operator_id, "enabled_at": global_mute.enabled_at
-            }, daemon=True).start()
-
-        elif any(k in text for k in ["开启", "恢复", "取消"]):
-            if global_mute.enabled:
-                global_mute.disable()
-                logger.info(f"全局屏蔽已关闭，操作人: {operator_id}")
-            threading.Thread(target=_send_mute_status_card, kwargs={
-                "chat_id": chat_id, "muted": False
-            }, daemon=True).start()
-
-        elif any(k in text for k in ["查看", "状态"]):
-            threading.Thread(target=_send_mute_status_card, kwargs={
-                "chat_id": chat_id,
-                "muted": global_mute.enabled,
-                "operator_id": global_mute.operator_id,
-                "enabled_at": global_mute.enabled_at
-            }, daemon=True).start()
-
-    except Exception as e:
-        logger.error(f"消息指令处理异常: {e}", exc_info=True)
 
 
 # ================= 回调主入口 (处理所有点击) =================
@@ -1119,6 +979,7 @@ def _schedule_timeout_check():
 
 # ================= 启动 =================
 def run_flask():
+    # 启动 Flask 服务，监听 5000 端口
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
 
 
@@ -1147,11 +1008,9 @@ def main():
     timeout_thread.daemon = True
     timeout_thread.start()
 
-    # 4. 启动飞书 WebSocket（断线自动重连，主线程阻塞）
+    # 4. 启动飞书 WebSocket（断线自动重连）
     event_handler = lark.EventDispatcherHandler.builder(VERIFICATION_TOKEN, ENCRYPT_KEY) \
-        .register_p2_card_action_trigger(do_card_action_trigger) \
-        .register_p2_im_message_receive_v1(do_message_receive) \
-        .build()
+        .register_p2_card_action_trigger(do_card_action_trigger).build()
 
     while True:
         try:

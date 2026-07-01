@@ -1,0 +1,16 @@
+version: '1.0'
+app:
+  appName: pythonproject-84t3fp
+  appNameCn: pythonproject-84t3fp
+  appId: 19277
+  functionId: lfc-zwcmd8x3
+  tenantId: zwhpkb
+  tenantName: 冲压中心
+deployment:
+  runtime: native-python3.12
+  listenPort: 8080
+history:
+- timestamp: '2026-06-04T03:10:17.576465Z'
+  version: v1
+  status: success
+  url: https://lfc-zwcmd8x3.cnhb01-dev.fc.chj.cloud

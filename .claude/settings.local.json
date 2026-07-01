@@ -17,7 +17,10 @@
       "Bash(rm -f test_python_service.py test_suppression.py test_suppression_card.py query_stats.py main.py alarm_service.log setup.bat && rm -rf .vscode && echo \"done\")",
       "Bash(pip show *)",
       "Bash(pip install *)",
-      "Bash(pyinstaller --onefile --noconsole --name heartbeat heartbeat.py)"
+      "Bash(pyinstaller --onefile --noconsole --name heartbeat heartbeat.py)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\weichao13\\PycharmProjects\\PythonProject\\.claude\\skills",
